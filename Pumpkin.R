@@ -28,6 +28,13 @@ if(sum(as.numeric(!pacotes %in% installed.packages())) != 0){
   sapply(pacotes, require, character = T) 
 }
 
+# Configurações para utilizar mais núcloes do processador
+library(parallel)
+cl <- makeCluster(detectCores() - 1)  # Usa todos os núcleos menos 1
+clusterEvalQ(cl, library(dplyr))      # Carrega pacotes nos workers
+stopCluster(cl)                       # Finaliza os núcleos
+
+
 # Carregamento dos dados
 dados <- read_excel("Pumpkin_Seeds_Dataset.xlsx")
 

@@ -64,5 +64,63 @@ fviz_cluster(km_res, data = dados_padronizados, ellipse.type = "convex",
              ggtheme = theme_minimal(), main = "K-means (k=2)")
 
 
-# Comparar com classes reais
-print(table(Cluster = km_res$cluster, TrueClass = iris$Species))
+# Elaboração da clusterização hierárquica
+cluster_hier <- agnes(x = dados_padronizados, method = "single")
+
+# O input é a matriz de distâncias obtida anteriormente
+
+# Method é o tipo de encadeamento:
+
+## "complete": encadeamento completo (furthest neighbor ou complete linkage)
+## "single": encadeamento único (nearest neighbor ou single linkage)
+## "average": encadeamento médio (between groups ou average linkage)
+
+# Definição do esquema hierárquico de aglomeração
+
+# As distâncias para as combinações em cada estágio
+coeficientes <- sort(cluster_hier$height, decreasing = FALSE) 
+coeficientes
+
+# Tabela com o esquema de aglomeração. Interpretação do output:
+
+## As linhas são os estágios de aglomeração
+## Nas colunas Cluster1 e Cluster2, observa-se como ocorreu a junção
+## Quando for número negativo, indica observação isolada
+## Quando for número positivo, indica cluster formado anteriormente (estágio)
+## Coeficientes: as distâncias para as combinações em cada estágio
+
+esquema <- as.data.frame(cbind(cluster_hier$merge, coeficientes))
+names(esquema) <- c("Cluster1", "Cluster2", "Coeficientes")
+esquema
+
+# Visualização do esquema hierárquico de aglomeração
+esquema %>%
+  kable(row.names = T) %>%
+  kable_styling(bootstrap_options = "striped", 
+                full_width = FALSE, 
+                font_size = 20)
+
+# Construção do dendrograma
+dev.off()
+fviz_dend(x = cluster_hier)
+
+# Dendrograma com visualização dos clusters (definição de 2 clusters)
+fviz_dend(x = cluster_hier,
+          k = 2,
+          k_colors = c("deeppink4", "darkviolet"),
+          color_labels_by_k = F,
+          rect = T,
+          rect_fill = T,
+          lwd = 1,
+          ggtheme = theme_bw())
+
+# Criando variável categórica para indicação do cluster no banco de dados
+## O argumento 'k' indica a quantidade de clusters
+dados_padronizados$cluster_H <- factor(cutree(tree = cluster_hier, k = 2))
+
+# Visualização da base de dados com a alocação das observações nos clusters
+dados_padronizados %>%
+  kable() %>%
+  kable_styling(bootstrap_options = "striped", 
+                full_width = FALSE,
+                font_size = 20)

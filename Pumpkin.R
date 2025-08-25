@@ -28,18 +28,15 @@ if(sum(as.numeric(!pacotes %in% installed.packages())) != 0){
   sapply(pacotes, require, character = T) 
 }
 
-# Configurações para utilizar mais núcloes do processador
-library(parallel)
-cl <- makeCluster(detectCores() - 1)  # Usa todos os núcleos menos 1
-clusterEvalQ(cl, library(dplyr))      # Carrega pacotes nos workers
-stopCluster(cl)                       # Finaliza os núcleos
+# Carregamento de todo o ambiente
+load("ambiente_completo.RData")
 
 
 # Carregamento dos dados
-dados <- read_excel("Pumpkin_Seeds_Dataset.xlsx")
+dados_originais <- read_excel("Pumpkin_Seeds_Dataset.xlsx")
 
 #Exclusão da coluna Class
-dados <- dados %>% select(-Class)
+dados <- dados_originais  %>% select(-Class)
 
 
 head(dados)        # Mostra as primeiras linhas
@@ -70,6 +67,9 @@ print(km_res)
 fviz_cluster(km_res, data = dados_padronizados, ellipse.type = "convex",
              ggtheme = theme_minimal(), main = "K-means (k=2)")
 
+# Comparar com classes reais
+print(table(Cluster = km_res$cluster, TrueClass = dados_originais$Class))
+
 
 # Elaboração da clusterização hierárquica
 cluster_hier <- agnes(x = dados_padronizados, method = "single")
@@ -88,13 +88,6 @@ cluster_hier <- agnes(x = dados_padronizados, method = "single")
 coeficientes <- sort(cluster_hier$height, decreasing = FALSE) 
 coeficientes
 
-# Tabela com o esquema de aglomeração. Interpretação do output:
-
-## As linhas são os estágios de aglomeração
-## Nas colunas Cluster1 e Cluster2, observa-se como ocorreu a junção
-## Quando for número negativo, indica observação isolada
-## Quando for número positivo, indica cluster formado anteriormente (estágio)
-## Coeficientes: as distâncias para as combinações em cada estágio
 
 esquema <- as.data.frame(cbind(cluster_hier$merge, coeficientes))
 names(esquema) <- c("Cluster1", "Cluster2", "Coeficientes")
@@ -131,3 +124,5 @@ dados_padronizados %>%
   kable_styling(bootstrap_options = "striped", 
                 full_width = FALSE,
                 font_size = 20)
+
+save.image(file = "ambiente_completo.RData")
